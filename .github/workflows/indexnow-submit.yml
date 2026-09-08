@@ -1,0 +1,34 @@
+name: IndexNow submit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/indexnow-submit.yml'
+  workflow_dispatch:
+
+jobs:
+  submit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Submit URLs to IndexNow
+        shell: bash
+        run: |
+          set -euo pipefail
+          key='3f827e5ec9fe52465d4450f20be97f52'
+          urls=(
+            'https://aiventureopsjp-lgtm.github.io/bidscope/'
+            'https://aiventureopsjp-lgtm.github.io/free-check/'
+            'https://aiventureopsjp-lgtm.github.io/guide/bid-no-bid/'
+            'https://aiventureopsjp-lgtm.github.io/guide/it-public-procurement/'
+            'https://aiventureopsjp-lgtm.github.io/guide/find-government-bids/'
+          )
+          for u in "${urls[@]}"; do
+            code=$(curl -sS -o /tmp/indexnow_body -w '%{http_code}' --get 'https://api.indexnow.org/indexnow' --data-urlencode "url=$u" --data-urlencode "key=$key")
+            echo "$u -> HTTP $code"
+            if [[ "$code" != '200' && "$code" != '202' ]]; then
+              echo 'Response body:'
+              cat /tmp/indexnow_body || true
+              exit 1
+            fi
+          done
